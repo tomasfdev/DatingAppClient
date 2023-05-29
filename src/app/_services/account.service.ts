@@ -2,12 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, map } from 'rxjs';
 import { User } from '../_models/user';
+import { environment } from 'src/environments/environment';
 
 @Injectable({   //serviços são injetaveis(@Injectable, como em c#), serviços são singletons(são instanciados quando a app inicia e destruidos quando app é encerrada)
   providedIn: 'root'
 })
 export class AccountService {
-  apiUrl = "https://localhost:5001/api/";
+  apiUrl = environment.apiUrl;
   private currentUserSource = new BehaviorSubject<User | null>(null);  //Special Observable(BehaviorSubject) para que outros Components da App possam aceder à informação
   currentUser$ = this.currentUserSource.asObservable();
 
