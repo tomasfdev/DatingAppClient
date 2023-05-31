@@ -40,4 +40,12 @@ export class MembersService {
       })
     )
   }
+
+  setMainPhoto(photoId: number){
+    return this.http.put(this.apiUrl + "users/set-main-photo/" + photoId, {}); //como é um http put, tem que enviar um objeto como parametro, ent manda um obj vazio({})...tal como se fosse http post
+  }
+
+  deletePhoto(photoId: number){
+    return this.http.delete(this.apiUrl + "users/delete-photo/" + photoId);
+  }
 }

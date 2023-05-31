@@ -19,8 +19,7 @@ export class AccountService {
       map((response: User) => {
         const user = response;
         if (user)
-          localStorage.setItem("user", JSON.stringify(user));  //guarda as informações/dados de User no browser localStorage
-          this.currentUserSource.next(user);  //Observable currentUserSource vai guardar os dados de user
+          this.setCurrentUser(user);
       })
     )
   }
@@ -28,16 +27,15 @@ export class AccountService {
   register(model: any){
     return this.http.post<User>(this.apiUrl + "account/register", model).pipe(
       map(user => {
-        if(user){
-          localStorage.setItem("user", JSON.stringify(user));
-          this.currentUserSource.next(user);
-        }
+        if(user)
+          this.setCurrentUser(user);
       })
     )
   }
 
   setCurrentUser(user: User){
-    this.currentUserSource.next(user);
+    localStorage.setItem("user", JSON.stringify(user)); //guarda as informações/dados de User no browser localStorage
+    this.currentUserSource.next(user);  //Observable currentUserSource vai guardar os dados de user
   }
 
   logout(){
