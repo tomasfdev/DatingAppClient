@@ -1,8 +1,12 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
 import { Member } from '../_models/member';
-import { map, of } from 'rxjs';
+import { map, of, take } from 'rxjs';
+import { PaginatedResult } from '../_models/pagination';
+import { UserParams } from '../_models/userParams';
+import { AccountService } from './account.service';
+import { User } from '../_models/user';
 
 @Injectable({
   providedIn: 'root'
@@ -10,25 +14,64 @@ import { map, of } from 'rxjs';
 export class MembersService {
   apiUrl = environment.apiUrl;
   members: Member[] = [];
+  memberCache = new Map();  //dá acesso às prop(get & set) de um obj quando obtiver o pedido da API
+  user: User | undefined;
+  userParams: UserParams | undefined;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private accountService: AccountService) {
+    accountService.currentUser$.pipe(take(1)).subscribe({
+      next: user => {
+        if (user) {
+          this.userParams = new UserParams(user);
+          this.user = user;
+        }
+      }
+    })
+  }
 
-  getMembers(){
-    if(this.members.length > 0) //se já tiver carregado members da API ent retorna esses members,
-      return of(this.members);
+  getUserParams(){
+    return this.userParams;
+  }
 
-    return this.http.get<Member[]>(this.apiUrl + "users").pipe( //se não vai buscar members,
-      map(members => {
-        this.members = members;
-        return members; //e retorna-los
+  setUserParams(params: UserParams) {
+    this.userParams = params;
+  }
+
+  resetUserParams() {
+    if (this.user) {
+      this.userParams = new UserParams(this.user);
+      return this.userParams;
+    }
+    return;
+  }
+
+  getMembers(UserParams: UserParams){
+    const response = this.memberCache.get(Object.values(UserParams).join("-")); //isto é a key... exemplo de key:  
+
+    if (response) return of (response); //se response=true(quer dizer que esta consulta/query/ já foi feita, logo ñ é necessario fazer novo request à API e retorna os valores já guardados)
+
+    let params = this.getPaginationHeaders(UserParams.pageNumber, UserParams.pageSize);
+
+    params = params.append("minAge", UserParams.minAge);
+    params = params.append("maxAge", UserParams.maxAge);
+    params = params.append("gender", UserParams.gender);
+    params = params.append("orderBy", UserParams.orderBy);
+
+    return this.getPaginatedResult<Member[]>(this.apiUrl + "users", params).pipe(
+      map(response => {
+        this.memberCache.set(Object.values(UserParams).join("-"), response);
+        return response;
       })
     )
   }
 
   getMemberByName(username: string){
-    const member = this.members.find(user => user.userName === username)
-    if(member) //se já tiver carregado members da API ent retorna esses members,
-      return of(member);
+    const member = [...this.memberCache.values()]
+      .reduce((array, element) => array.concat(element.result), [])
+      .find((member: Member) => member.userName === username);
+
+      if (member) return of(member);  //retorna uma observable of member
+
     return this.http.get<Member>(this.apiUrl + "users/" + username);
   }
 
@@ -47,5 +90,33 @@ export class MembersService {
 
   deletePhoto(photoId: number){
     return this.http.delete(this.apiUrl + "users/delete-photo/" + photoId);
+  }
+
+  private getPaginatedResult<T>(url: string, params: HttpParams) {
+    const paginatedResult: PaginatedResult<T> = new PaginatedResult<T>;
+
+    return this.http.get<T>(url, { observe: "response", params }).pipe(
+      map(response => {
+        if (response.body) {
+          paginatedResult.result = response.body;
+        }
+
+        const pagination = response.headers.get("Pagination"); //vai à resposta, header, e obtem pagination
+        if (pagination) {
+          paginatedResult.pagination = JSON.parse(pagination);
+        }
+
+        return paginatedResult;
+      })
+    );
+  }
+
+  private getPaginationHeaders(pageNumber: number, pageSize: number) {
+    let params = new HttpParams(); //HttpParams fornecido pelo angular que permite definir query parameters
+
+      params = params.append("pageNumber", pageNumber);
+      params = params.append("pageSize", pageSize);
+
+    return params;
   }
 }
