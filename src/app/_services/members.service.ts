@@ -7,6 +7,7 @@ import { PaginatedResult } from '../_models/pagination';
 import { UserParams } from '../_models/userParams';
 import { AccountService } from './account.service';
 import { User } from '../_models/user';
+import { getPaginatedResult, getPaginationHeaders } from './paginationHelper';
 
 @Injectable({
   providedIn: 'root'
@@ -50,14 +51,14 @@ export class MembersService {
 
     if (response) return of (response); //se response=true(quer dizer que esta consulta/query/ já foi feita, logo ñ é necessario fazer novo request à API e retorna os valores já guardados)
 
-    let params = this.getPaginationHeaders(UserParams.pageNumber, UserParams.pageSize);
+    let params = getPaginationHeaders(UserParams.pageNumber, UserParams.pageSize);
 
     params = params.append("minAge", UserParams.minAge);
     params = params.append("maxAge", UserParams.maxAge);
     params = params.append("gender", UserParams.gender);
     params = params.append("orderBy", UserParams.orderBy);
 
-    return this.getPaginatedResult<Member[]>(this.apiUrl + "users", params).pipe(
+    return getPaginatedResult<Member[]>(this.apiUrl + "users", params, this.http).pipe(
       map(response => {
         this.memberCache.set(Object.values(UserParams).join("-"), response);
         return response;
@@ -97,38 +98,10 @@ export class MembersService {
   }
 
   getLikes(predicate: string, pageNumber: number, pageSize: number) {
-    let params = this.getPaginationHeaders(pageNumber, pageSize);
+    let params = getPaginationHeaders(pageNumber, pageSize);
 
     params = params.append("predicate", predicate);
 
-    return this.getPaginatedResult<Member[]>(this.apiUrl + "likes", params);
-  }
-
-  private getPaginatedResult<T>(url: string, params: HttpParams) {
-    const paginatedResult: PaginatedResult<T> = new PaginatedResult<T>;
-
-    return this.http.get<T>(url, { observe: "response", params }).pipe(
-      map(response => {
-        if (response.body) {
-          paginatedResult.result = response.body;
-        }
-
-        const pagination = response.headers.get("Pagination"); //vai à resposta, header, e obtem pagination
-        if (pagination) {
-          paginatedResult.pagination = JSON.parse(pagination);
-        }
-
-        return paginatedResult;
-      })
-    );
-  }
-
-  private getPaginationHeaders(pageNumber: number, pageSize: number) {
-    let params = new HttpParams(); //HttpParams fornecido pelo angular que permite definir query parameters
-
-      params = params.append("pageNumber", pageNumber);
-      params = params.append("pageSize", pageSize);
-
-    return params;
+    return getPaginatedResult<Member[]>(this.apiUrl + "likes", params, this.http);
   }
 }
