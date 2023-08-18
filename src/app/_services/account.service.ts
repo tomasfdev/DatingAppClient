@@ -34,6 +34,9 @@ export class AccountService {
   }
 
   setCurrentUser(user: User){
+    user.roles = [];
+    const roles = this.getDecodedToken(user.token).role;  //roles vai guardar a(s) role(s) do user(user.token.role, vai ao token buscar a role)
+    Array.isArray(roles) ? user.roles = roles : user.roles.push(roles); //se roles for um array[](user tiver + q uma role) guarda, se ñ acrescenta valor ao array e guarda tbm
     localStorage.setItem("user", JSON.stringify(user)); //guarda as informações/dados de User no browser localStorage
     this.currentUserSource.next(user);  //Observable currentUserSource vai guardar os dados de user
   }
@@ -41,5 +44,9 @@ export class AccountService {
   logout(){
     localStorage.removeItem("user");
     this.currentUserSource.next(null);
+  }
+
+  getDecodedToken(token: string) {
+    return JSON.parse(atob(token.split(".")[1]))
   }
 }
