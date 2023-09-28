@@ -1,6 +1,6 @@
 # DatingApp
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 15.2.4.
+Front-End of a dating application where people can register and log in, have a live presence, live chat, like other users, send and receive messages in real time. This front-end is an Angular app using the DotNet CLI and the Angular CLI v16
 
 ## Development server
 
