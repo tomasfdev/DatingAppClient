@@ -27,4 +27,9 @@
     background-color: #ffffff00;
     border: 0;
     padding: 15px 0;
-  }  
+  }
+
+  .gallery {
+    height: 500px;
+    background-color: transparent;
+  } 
