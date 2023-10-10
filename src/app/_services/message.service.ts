@@ -81,8 +81,8 @@ export class MessageService {
 
   async sendMessage(username: string, messageContent: string) {
     this.hubConnection
-      ?.invoke('sendMessage', { recipientUsername: username, messageContent })
-      //LER invoke(invokes a hub method(metodo "sendMessage", em MessageHub.cs no sv) on the server using the specified name and arguments.)
+      ?.invoke('SendMessage', { recipientUsername: username, messageContent })
+      //LER invoke(invokes a hub method(metodo "SendMessage", em MessageHub.cs no sv) on the server using the specified name and arguments.)
       //recipientUsername é o nome do obj que estou a passar, que leva 2 params
       .catch((error) => console.log(error));
   }
